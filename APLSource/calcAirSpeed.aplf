@@ -1,0 +1,22 @@
+ calcAirSpeed←{
+     dbr me←⍵
+     st←⍺
+
+     sh←⊃me ⍝ Status for MagHead
+     me←1↓me
+
+     hdg←(360÷1024)×(2⊥10↑me)
+     me←10↓me
+
+     asType←⊃me ⍝ 0, IAS (Indicated). 1, TAS (True).
+     me←1↓me
+
+     airspeed←(2*⍨2-⍨st)×(1-⍨2⊥10↑me)
+     me←10↓me
+
+     dbr[18]←hdg
+     dbr[19]←airspeed
+     dbr[20]←1
+     dbr[21]←1+asType ⍝ 1, IAS. 2, TAS.
+     dbr
+ }

@@ -1,0 +1,40 @@
+ adsbProcess datap;data;df;ca;icao;me;tc;pi;generator;calc;dbr;idx
+ data←⊂df←17 ⍝ DownLink Format
+ data,←⊂ca←2⊥3↑5↓datap ⍝ Transponder Capabilities
+ data,←⊂icao←(⎕D,⎕A)[(6⍴16)⊤2⊥24↑8↓datap] ⍝ ICAO Transponder Code (Identification of Transponder)
+ data,←⊂me←56↑32↓datap ⍝ Message
+ data,←⊂tc←2⊥5↑32↓datap ⍝ Message Type (contained in message itself)
+ pi←24↑88↓datap ⍝ Parity bits (parity, checksum, and CRC remainder are considered to be synonyms, this is actually CRC)
+
+ calc←(¯24↓datap),(24⍴0)
+ generator←1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 0 0 0 0 0 0 1 0 0 1
+ {1=calc[⍵]:calc[⍵+⍳25]←generator≠calc[⍵+⍳25]}¨⍳88
+ calc←¯24↑calc
+ :If calc≢pi
+     ⍝⎕←'Invalid Message, Throwing Error'
+     ⍝⎕SIGNAL 10
+    ⍬
+ :EndIf
+ idx←⍸(⊂icao)⍷db[;0]
+ :If 0=⍴idx
+     dbr←db⍪←(⊂icao),(((⍴db)[1]-1)⍴⊂⍬)
+     idx←⍸(⊂icao)⍷db[;0]
+ :Else
+     dbr←,db[idx;]
+ :EndIf
+
+
+ :If (tc-1)∊⍳4 ⍝ This is an ident message
+     dbr data←dbr messages.ident data
+ :ElseIf tc∊(9+⍳10),(20+⍳3) ⍝ AirPos
+     dbr data←dbr messages.airPos data
+ :ElseIf tc∊(5+⍳4) ⍝ Surface Pos
+     dbr data←dbr messages.surfacePos data
+ :ElseIf tc=19 ⍝ airVelocity
+     dbr data←dbr messages.airVelocity data
+ :Else
+     ⍝⎕←'Msg Does Not Exist: ',tc
+ :EndIf
+ db[idx;]←dbr
+
+ ⍝⎕←dbr

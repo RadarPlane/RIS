@@ -1,0 +1,26 @@
+ calcGroundSpeed←{
+     dbr me←⍵
+     st←⍺
+
+     ewDirection←1-2×⊃me
+     me←1↓me
+
+     ewComponent←ewDirection×(2*⍨st)×(1-⍨2⊥10↑me)
+     me←10↓me
+
+     nsDirection←1-2×⊃me
+     me←1↓me
+
+     nsComponent←nsDirection×(2*⍨st)×(1-⍨2⊥10↑me)
+     me←10↓me
+
+     groundSpeed←0.5*⍨((nsComponent*2)+(ewComponent*2))
+
+     groundTrk←360|(360÷○2)×(nsComponent(12○⊣+0J1×⊢)ewComponent)
+
+     dbr[18]←groundTrk
+     dbr[19]←groundSpeed
+     dbr[20]←0 ⍝ GNSS
+     dbr[21]←0 ⍝ GNSS
+     dbr
+ }

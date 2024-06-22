@@ -1,0 +1,6 @@
+ t←genCatTable
+ t←0 7⍴⍬
+ t⍪←7⍴''
+ t⍪←'Surface emergency vehicle' '' 'Surface service vehicle' 'Ground obstruction' 'Ground obstruction' 'Ground obstruction' 'Ground obstruction'
+ t⍪←'Glider, sailplane' 'Lighter-than-air' 'Parachutist, skydiver' 'Ultralight, hang-glider, paraglider' '' 'Unmanned aerial vehicle' 'Space or transatmospheric vehicle'
+ t⍪←'Light (less than 7000 kg)' 'Medium 1 (between 7000 kg and 34000 kg)' 'Medium 2 (between 34000 kg to 136000 kg)' 'High vortex aircraft' 'Heavy (larger than 136000 kg)' 'High performance (>5 g acceleration) and high speed (>400 kt)' 'Rotorcraft'

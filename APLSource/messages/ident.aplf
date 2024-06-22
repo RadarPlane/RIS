@@ -1,0 +1,19 @@
+ ident←{
+     data←⍵
+     dbr←⍺
+     me←∊data[3]
+     tc←∊data[4]
+     map←⎕A,(5⍴'#'),' ',(15⍴'#'),⎕D
+
+     me←5↓me
+     category←2⊥3↑me ⍝ Vector, tc cat
+     category←tc category
+
+     callsign←map[1-⍨2⊥¨6{⍵⊂[0]⍨(≢⍵)⍴⍺↑1}3↓me]
+
+     data[3]←⊂me←category callsign
+     dbr[1]←⊂callsign
+     dbr[2]←⊂category
+
+     dbr data
+ }

@@ -1,0 +1,38 @@
+ calcGrdPos←{
+     reflat reflon latce latco lonce lonco te to←⍵ ⍝ time even, time odd
+     latce lonce latco lonco←(2*17)÷⍨latce lonce latco lonco
+     Nz←15
+     NL←{⌊○2÷(¯2○(1-((1-(2○(○÷(2×Nz))))÷(2*⍨(2○(○⍵÷180))))))}
+     mod←{⍺-(⍵×(⌊(⍺÷⍵)))}
+
+     j←⌊0.5+(59×latce)-(60×latco)
+
+     late←(90÷(4×Nz))×latce+(j mod 60)
+     lato←(90÷(1-⍨4×Nz))×latco+(j mod 59)
+     nl←NL late
+
+     nl≠(NL lato):⍬ ⍬
+
+     reo←te≥to
+
+     lat←(0 90)-⍨(lato late)[reo]
+     lat←⊃lat[⍋|reflat-lat]
+
+
+
+     m←⌊0.5+(lonce×(nl-1))-lonco×nl
+
+     ne←1⌈(nl)
+     no←1⌈(nl-1)
+
+     lone←(90÷ne)×lonce+(m mod ne)
+     lono←(90÷no)×lonco+(m mod no)
+
+     lon←(0 90 180 270)+(lono lone)[reo]
+
+     lon←⊃lon[⍋|reflon-lon]
+
+     ⍝lon-←360×(lon≥180)
+
+     lat lon
+ }

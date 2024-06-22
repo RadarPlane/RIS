@@ -1,0 +1,32 @@
+ main port;wait;data;event;obj;rc;r
+ DRC←Conga.Init''
+    ⍝ RIS (Port 30001 usually)
+ DONE←0 ⍝ Set global DONE to 1 to stop service
+ ⎕IO←0
+
+ db←0 25⍴⍬ ⍝ ICAO, CS, CAT, clate clato clone clono et ot lat lon alt gclate gclato gclone gclono get got track speed tracktype(1:Mag, 0:GNSS) speedtype(0: GS, 1: IAS, 2: TAS) ifrcap vertrate diffGNSSBaro
+
+ :If 0≠⊃r←DRC.Srv'RIS' ''port'Text' ⍝ start the server in Text mode
+     ⎕←'Unable to start RIS: ',⍕r
+ :Else
+     ⎕←'RIS started on port ',⍕port
+     :While ~DONE
+         rc obj event data←4↑wait←DRC.Wait'RIS' 1000 ⍝ Time out now and again
+         :Select rc
+         :Case 0
+             :Select event
+             :Case 'Connect'
+                 ⍝_←process data
+             :Case 'Block'
+                 _←process data
+             :Else
+                 {}DRC.Close obj ⍝ Anything unexpected
+             :EndSelect
+         :Case 100  ⍝ Time out - Housekeeping Here
+         :Else
+             ⎕←'Error in Wait: ',⍕wait ⋄ DONE←1
+         :EndSelect
+     :EndWhile
+     {}DRC.Close'RIS'
+     ⎕←'RIS Server terminated.'
+ :EndIf

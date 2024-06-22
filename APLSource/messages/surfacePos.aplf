@@ -1,0 +1,49 @@
+ surfacePos←{
+     ⍝ The ideal way would be to have the antennas location, but at this point, I don't know how to realistically get this
+     ⍝ So we do globally unambiguous position, using the last known location of the plane (Might be air, might be surface)
+     data←⍵
+     dbr←⍺
+    spdtable←(0 0),(8⍴0.125),(4⍴0.25),(26⍴0.5),(55⍴1),(15⍴2),(15⍴5),(3⍴⍬)
+
+
+     me←∊data[3]
+     tc←∊data[4]
+
+     me←5↓me
+
+     mov←2⊥7↑me
+     speed←+/spdtable[⍳1+mov]
+     me←7↓me
+
+     status←⊃me ⍝ Status for Ground Track
+     me←1↓me
+
+     trk←status×128÷⍨360×2⊥7↑me
+     me←7↓me
+
+     t←¯1 1 ⎕DT⊂⎕TS
+     me←1↓me ⍝ The time bit seems to be useless? Something to do with UTC
+
+     evenorodd←⊃me
+     me←1↓me
+
+     latc←2⊥17↑me
+     me←17↓me
+     lonc←2⊥17↑me
+
+
+
+     dbr[12+evenorodd]←latc
+     dbr[14+evenorodd]←lonc
+     dbr[16+evenorodd]←t
+
+     lat lon←{((~0∊⍴∊⍵[9])∧(~0∊⍴∊⍵[10]))∧((~0∊⍴∊⍵[12])∧(~0∊⍴∊⍵[13])):##.calcGrdPos ⍵[(9 10),(12+⍳6)] ⋄ ⍬ ⍬}dbr
+    ⍝ Lat and Lon must already exist (as air pos), and must have even and odd too
+
+     dbr[9]←⊂lat
+     dbr[10]←⊂lon
+     dbr[18]←trk
+    dbr[19]←speed
+
+     dbr data
+ }

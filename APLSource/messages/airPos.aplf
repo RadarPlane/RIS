@@ -1,0 +1,44 @@
+ airPos←{
+     data←⍵
+     dbr←⍺
+
+     me←∊data[3]
+     tc←∊data[4]
+
+     me←5↓me
+
+     ss←2⊥2↑me ⍝ 0: no condition, 1: Perm Alert, 2: Temp Alert, 3: SPI Condit.
+     me←2↓me
+
+     saf←⊃me ⍝ Single Antenna Flag
+     me←1↓me
+
+     alt←12↑me
+     me←12↓me
+
+     t←¯1 1 ⎕DT⊂⎕TS
+     me←1↓me ⍝ The time bit seems to be useless? Something to do with UTC
+
+     evenorodd←⊃me
+     me←1↓me
+
+     latc←2⊥17↑me
+     me←17↓me
+     lonc←2⊥17↑me
+
+
+
+     dbr[3+evenorodd]←latc
+     dbr[5+evenorodd]←lonc
+     dbr[7+evenorodd]←t
+
+     lat lon←{(~0∊⍴∊⍵[3])∧(~0∊⍴∊⍵[4]):##.calcAirPos ⍵[3 4 5 6 7 8] ⋄ ⍬ ⍬}dbr
+
+     dbr[9]←⊂lat
+     dbr[10]←⊂lon
+
+     alt←tc{⍺≤18:##.altBaro ⍵ ⋄ 2⊥⍵}alt
+     dbr[11]←alt
+
+     dbr data
+ }

@@ -1,0 +1,8 @@
+ altBaro←{
+     alt←⍵ ⍝ 12 bit alt field
+
+     q←alt[7]
+
+     q:1000-⍨25×2⊥alt[(⍳7),(8+⍳4)]
+    ~q:0 ⍝ Sorry concorde.... (altitude is higher than 50175 feet)
+ }
