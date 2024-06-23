@@ -2,7 +2,7 @@
 
 ## Overview
 
-RadarIngestSystem is a project written in Dyalog APL designed for ingesting and managing ADS-B raw data from multipule antenna sources. The system allows for the parsing and agrigation of multipule antenna sources. 
+RadarIngestSystem is a project written in Dyalog APL designed for ingesting and managing ADS-B raw data from multipule antenna sources. The system allows for the parsing and agrigation of multipule antenna sources. Written the help of [The 1090 Megahertz Riddle](https://mode-s.org/decode/misc/preface.html).
 
 ## Opening RIS
 
@@ -60,12 +60,14 @@ The database of planes is stored in a matrix format, where each row represents a
 | 23    | vertrate                             | Vertical rate |
 | 24    | diffGNSSBaro                         | Difference between GNSS and Barometric altitude |
 
+Note that the even and odd information contained within the database is for computational purposes, as one needs both an even and odd frame to calculate the latitude and longitude. 
+
 To check the database, you can use:
 ```apl
 RadarIngestSystem.db
 ```
 
-In the future, a proper GUI could be implemented, however the main purpose of this will be to create a REST API and use as the backend of RadarPlane.com. 
+In the future, a proper GUI could be implemented, however the main purpose of this will be to create a REST API to use as the backend of RadarPlane.com. 
 
 ## License
 
