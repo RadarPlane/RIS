@@ -1,0 +1,33 @@
+ thread port;wait;data;event;obj;rc;r;threadName;threadDONE
+ threadName←('RIS',⍕t)
+ threadDONE←0
+ :If 0≠⊃r←DRC.Srv threadName''port'Text' ⍝ start the server in Text mode
+     ⎕←'Unable to start RIS: ',⍕r
+ :Else
+     :If t=0
+         ⎕←'RIS started on port ',⍕port
+     :EndIf
+     :While (~DONE)∧(~threadDONE)
+         rc obj event data←4↑wait←DRC.Wait threadName 1000 ⍝ Time out now and again
+         :Select rc
+         :Case 0
+             :Select event
+             :Case 'Connect'
+                 ⍝_←process data
+                 t+←1
+                 thread&port
+             :Case 'Block'
+                 _←process data
+             :Case 'Closed'
+                 {}DRC.Close obj ⋄ threadDONE←1
+             :Else
+                 {}DRC.Close obj ⋄ threadDONE←1
+             :EndSelect
+         :Case 100  ⍝ Time out - Housekeeping Here
+         :Else
+             ⎕←'Error in Wait: ',⍕wait ⋄ DONE←1
+         :EndSelect
+     :EndWhile
+     {}DRC.Close threadName
+     ⎕←'RIS Server terminated.'
+ :EndIf

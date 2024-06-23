@@ -7,11 +7,11 @@
      ⍝data←';'(≠⊆⊢)data
      data←(';',⎕UCS 10)(~⍤∊⍨⊆⊢)data
      {
-     data←1↓⍵
-     0::⍬⍝⎕←'Error Processing: Continuing without'
-     datap←,↑((4⍴2)⊤⊢)¨{⍵⍳⍨⎕D,⎕A}data ⍝ Convert to bin
-     fmt←2⊥5↑datap ⍝ First 5 bits is format
-     ~fmt=17:⍬
-     fmt=17:adsbProcess datap
+         data←1↓⍵
+         0::⍬⍝⎕←'Error Processing: Continuing without'
+         datap←,↑((4⍴2)⊤⊢)¨{⍵⍳⍨⎕D,⎕A}data ⍝ Convert to bin
+         fmt←2⊥5↑datap ⍝ First 5 bits is format
+         ~fmt=17:⍬
+         fmt=17:adsbProcess datap
      }¨data
  }
