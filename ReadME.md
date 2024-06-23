@@ -2,7 +2,7 @@
 
 ## Overview
 
-RadarIngestSystem is a project written in Dyalog APL designed for ingesting and managing ADS-B raw data from multipule antenna sources. The system allows for the parsing and agrigation of multipule antenna sources. Written the help of [The 1090 Megahertz Riddle](https://mode-s.org/decode/misc/preface.html).
+RadarIngestSystem is a project written in Dyalog APL designed for ingesting and managing ADS-B raw data from multipule antenna sources. The system allows for the parsing and agrigation of multipule antenna sources. Written with reference of [The 1090 Megahertz Riddle](https://mode-s.org/decode/misc/preface.html).
 
 ## Opening RIS
 
