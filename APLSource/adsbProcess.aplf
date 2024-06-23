@@ -8,14 +8,14 @@
 
  calc←(¯24↓datap),(24⍴0)
  generator←1 1 1 1 1 1 1 1 1 1 1 1 1 0 1 0 0 0 0 0 0 1 0 0 1
- {1=calc[⍵]:calc[⍵+⍳25]←generator≠calc[⍵+⍳25]}¨⍳88
- calc←¯24↑calc
+ {1=calc[⍵]:calc[⍵+⍳25]←generator≠calc[⍵+⍳25]}¨⍳88 ⍝ Check if message is valid, and not broken in any way
+ calc←¯24↑calc ⍝ Remainder
  :If calc≢pi
      ⍝⎕←'Invalid Message, Throwing Error'
      ⍝⎕SIGNAL 10
     ⍬
  :EndIf
- idx←⍸(⊂icao)⍷db[;0]
+ idx←⍸(⊂icao)⍷db[;0] ⍝ Find the row or make the row
  :If 0=⍴idx
      dbr←db⍪←(⊂icao),(((⍴db)[1]-1)⍴⊂⍬)
      idx←⍸(⊂icao)⍷db[;0]
@@ -33,7 +33,7 @@
  :ElseIf tc=19 ⍝ airVelocity
      dbr data←dbr messages.airVelocity data
  :Else
-     ⍝⎕←'Msg Does Not Exist: ',tc
+     ⍝⎕←'Msg type Does Not Exist: ',tc
  :EndIf
  db[idx;]←dbr
 

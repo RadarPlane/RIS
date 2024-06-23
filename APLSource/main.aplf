@@ -5,5 +5,5 @@
  ⎕IO←0
 
  db←0 25⍴⍬ ⍝ ICAO, CS, CAT, clate clato clone clono et ot lat lon alt gclate gclato gclone gclono get got track speed tracktype(1:Mag, 0:GNSS) speedtype(0: GS, 1: IAS, 2: TAS) ifrcap vertrate diffGNSSBaro
- t←0
+ t←0 ⍝ Thread number
  thread & port

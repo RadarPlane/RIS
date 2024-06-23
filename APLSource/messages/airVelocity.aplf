@@ -13,22 +13,22 @@
      ic←⊃me ⍝ intent change
      me←1↓me
 
-     ifrcapable←⊃me
+     ifrcapable←⊃me ⍝ Capable of Instrument Flight Rules
      me←1↓me
 
-     navUncertain←2⊥3↑me
+     navUncertain←2⊥3↑me ⍝ Uncertainty in these numbers
      me←3↓me
 
-     subTypeField←22↑me
+     subTypeField←22↑me ⍝ The data of the subtype (differs depending on subtype)
      me←22↓me
 
-     vrSrc←⊃me
+     vrSrc←⊃me ⍝ Source of vspeed
      me←1↓me
 
      vrsign←1-2×⊃me
      me←1↓me
 
-     vr←vrsign×64×(1-⍨2⊥9↑me)
+     vr←vrsign×64×(1-⍨2⊥9↑me) ⍝ Vertical speed
      me←9↓me
 
      me←2↓me

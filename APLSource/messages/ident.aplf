@@ -2,14 +2,15 @@
      data←⍵
      dbr←⍺
      me←∊data[3]
-     tc←∊data[4]
-     map←⎕A,(5⍴'#'),' ',(15⍴'#'),⎕D
+     tc←∊data[4] ⍝ Type code
+
+     map←⎕A,(5⍴'#'),' ',(15⍴'#'),⎕D 
 
      me←5↓me
-     category←2⊥3↑me ⍝ Vector, tc cat
-     category←tc category
+     category←2⊥3↑me 
+     category←tc category ⍝ Index to ##.genCatTable
 
-     callsign←map[1-⍨2⊥¨6{⍵⊂[0]⍨(≢⍵)⍴⍺↑1}3↓me]
+     callsign←map[1-⍨2⊥¨6{⍵⊂[0]⍨(≢⍵)⍴⍺↑1}3↓me] ⍝ Map the numbers to the characters to get callsign
 
      data[3]←⊂me←category callsign
      dbr[1]←⊂callsign

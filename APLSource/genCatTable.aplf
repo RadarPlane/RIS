@@ -1,4 +1,5 @@
  t←genCatTable
+ ⍝ Category table of aircraft. Indicies are in db[2]
  t←0 7⍴⍬
  t⍪←7⍴''
  t⍪←'Surface emergency vehicle' '' 'Surface service vehicle' 'Ground obstruction' 'Ground obstruction' 'Ground obstruction' 'Ground obstruction'

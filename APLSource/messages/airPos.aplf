@@ -3,7 +3,7 @@
      dbr←⍺
 
      me←∊data[3]
-     tc←∊data[4]
+     tc←∊data[4] ⍝ Depending on tc, the altitude is either baro or gnss, and encoding is different, as GNSS is measured in meters, and baro is in ft.
 
      me←5↓me
 

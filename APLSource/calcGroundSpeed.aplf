@@ -1,6 +1,6 @@
  calcGroundSpeed←{
      dbr me←⍵
-     st←⍺
+     st←⍺ ⍝ 1 regular, 2 supersonic
 
      ewDirection←1-2×⊃me
      me←1↓me

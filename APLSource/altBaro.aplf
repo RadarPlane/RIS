@@ -5,4 +5,5 @@
 
      q:1000-⍨25×2⊥alt[(⍳7),(8+⍳4)]
     ~q:0 ⍝ Sorry concorde.... (altitude is higher than 50175 feet)
+    ⍝ if q is 0, this means that the plane is above 50175 ft. After a plane goes above this height, the height is encoded in gray code. TODO for later. 
  }

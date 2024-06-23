@@ -1,8 +1,8 @@
  calcAirSpeed←{
      dbr me←⍵
-     st←⍺
+     st←⍺ ⍝ 1 regular, 2 supersonic
 
-     sh←⊃me ⍝ Status for MagHead
+     sh←⊃me ⍝ Status for MagHead (0, not working, 1, working)
      me←1↓me
 
      hdg←(360÷1024)×(2⊥10↑me)

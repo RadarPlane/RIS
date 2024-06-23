@@ -1,4 +1,5 @@
  thread port;wait;data;event;obj;rc;r;threadName;threadDONE
+ ⍝ Start a server thread to listen for more connections
  threadName←('RIS',⍕t)
  threadDONE←0
  :If 0≠⊃r←DRC.Srv threadName''port'Text' ⍝ start the server in Text mode
@@ -14,18 +15,18 @@
              :Select event
              :Case 'Connect'
                  ⍝_←process data
-                 t+←1
+                 t+←1 ⍝ On connect, start another thread, to allow others to connect
                  thread&port
              :Case 'Block'
-                 _←process data
+                 _←process data ⍝ Data received!
              :Case 'Closed'
-                 {}DRC.Close obj ⋄ threadDONE←1
+                 {}DRC.Close obj ⋄ threadDONE←1 ⍝ Close thread
              :Else
-                 {}DRC.Close obj ⋄ threadDONE←1
+                 {}DRC.Close obj ⋄ threadDONE←1 ⍝ Close thread
              :EndSelect
          :Case 100  ⍝ Time out - Housekeeping Here
          :Else
-             ⎕←'Error in Wait: ',⍕wait ⋄ DONE←1
+             ⎕←'Error in Wait: ',⍕wait ⋄ threadDONE←1 
          :EndSelect
      :EndWhile
      {}DRC.Close threadName

@@ -3,7 +3,7 @@
      ⍝ So we do globally unambiguous position, using the last known location of the plane (Might be air, might be surface)
      data←⍵
      dbr←⍺
-    spdtable←(0 0),(8⍴0.125),(4⍴0.25),(26⍴0.5),(55⍴1),(15⍴2),(15⍴5),(3⍴⍬)
+    spdtable←(0 0),(8⍴0.125),(4⍴0.25),(26⍴0.5),(55⍴1),(15⍴2),(15⍴5),(3⍴⍬) ⍝ Depending on how fast it is going, there are different precisions
 
 
      me←∊data[3]
@@ -38,7 +38,7 @@
      dbr[16+evenorodd]←t
 
      lat lon←{((~0∊⍴∊⍵[9])∧(~0∊⍴∊⍵[10]))∧((~0∊⍴∊⍵[12])∧(~0∊⍴∊⍵[13])):##.calcGrdPos ⍵[(9 10),(12+⍳6)] ⋄ ⍬ ⍬}dbr
-    ⍝ Lat and Lon must already exist (as air pos), and must have even and odd too
+    ⍝ Lat and Lon must already exist, and must have even and odd frames too
 
      dbr[9]←⊂lat
      dbr[10]←⊂lon
