@@ -1,4 +1,4 @@
- main port;radar
+ main port;radar;wait;data;event;obj;rc;r;threadName;threadDONE;addr;a;bytes
  DRC←Conga.Init''
     ⍝ RIS (Port 30001 usually)
  DONE←0 ⍝ Set global DONE to 1 to stop service
@@ -6,7 +6,49 @@
  (DRC.SetProp'.' 'Protocol' 'IPV4')
  db←0 25⍴⍬ ⍝ ICAO, CS, CAT, clate clato clone clono et ot lat lon alt gclate gclato gclone gclono get got track speed tracktype(1:Mag, 0:GNSS) speedtype(0: GS, 1: IAS, 2: TAS) ifrcap vertrate diffGNSSBaro
  radarDb←⍬ ⍝ Vector of radars
- t←0 ⍝ Thread number
- radar←⎕NEW RadarClient port
- radar.Listen
- radarDb,←radar
+⍝  radar←⎕NEW RadarClient port
+⍝  radar.Listen
+⍝  radarDb,←radar
+       ⍝ Start a server thread to listen for more connections
+ threadDONE←0
+ :If 0≠⊃r←DRC.Srv'RIS-Listen' ''port'Text' ⍝ start the server in Text mode
+     ⎕←'Unable to start RIS: ',⍕r
+ :Else
+     ⎕←'RIS started on port ',⍕port
+     :While ~DONE
+         rc obj event data←4↑wait←DRC.Wait'RIS-Listen' 1000 ⍝ Time out now and again
+         :Select rc
+         :Case 0
+             :Select event
+             :Case 'Connect'
+                 ⎕←'Connected!'
+                 radar←⎕NEW RadarClient obj
+                 radar.Connected←1
+                 radar.Port←port
+                 addr←DRC.GetProp obj'PeerAddr'
+                 a←a↑⍨⊃⌽⍸':'⍷a←↑1⌷↑1⌷addr
+                 bytes←↑2⌷↑1⌷addr
+                 :If (∨/'.'⍷a)∧(∨/'[::ffff:'⍷a) ⍝ Is embedded IPv4 in IPv6
+                     a←⊃{(⍕⍺),'.',(⍕⍵)}/¯4↑bytes
+                 :EndIf
+                 radar.Address←a
+                 radar.UUID←genUUID a ⍝ To be implemented
+                 radar.RadarName←'Unknown' ⍝ To be implemented
+                 radar.Position←(0 0) ⍝ To be implemented
+                 radar.RadarProtocol←'raw'
+                 radarDb,←radar
+             :Case 'Block'
+                       ⍝ Data received!
+                (radarDb⌷⍨(⊂obj)(⍸⍷)(radarDb.CongaObjName)).ProcessMessage data
+                 ⍝⎕←'data!'
+             :Else
+                 {}DRC.Close obj
+             :EndSelect
+         :Case 100  ⍝ Time out - Housekeeping Here
+         :Else
+             ⎕←'Error in Wait: ',⍕wait
+         :EndSelect
+     :EndWhile
+     {}DRC.Close'RIS-Listen'
+     ⎕←'RIS Server terminated.'
+ :EndIf

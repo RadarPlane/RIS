@@ -1,5 +1,5 @@
 :Class Radar
-    :Field Public ThreadName ⍝ Name of the thread in conga
+    :Field Public CongaObjName ⍝ Name of the obj in conga
     :Field Public Address ⍝ IP or URL
     :Field Public Port ⍝ Port to either listen or connect
     :Field Public UUID ⍝ UUID of radar. To be implemented later...
@@ -12,11 +12,11 @@
 
     :Field Public Connected ⍝ Is the Radar connected to RIS? Whether client or server.
     ⍝ If the Radar is not connected, chances are that this is a Client, and we are waiting for something to connect.
-    ∇ make5(_threadName _addr _port _uuid _pos)
+    ∇ make5(_obj _addr _port _uuid _pos)
       :Access public
       :Implements constructor
       ⍝ args is a vector: threadName, addr, port, uuid, pos
-      (ThreadName Address Port UUID Position)←(_threadName _addr _port _uuid _pos)
+      (CongaObjName Address Port UUID Position)←(_obj _addr _port _uuid _pos)
     ∇
 
     ∇ MessageProcessed ⍝ Run this whenever a message has been finished being processed
@@ -30,7 +30,7 @@
     ∇ ProcessMessage data
       :Access Public
       ⍝ TODO. Pass ⎕THIS to the process function, along with the message, I think.
-      #.RadarIngestSystem.process data ⎕THIS
+      _←#.RadarIngestSystem.process data ⎕THIS
       MessageProcessed
     ∇
 :EndClass

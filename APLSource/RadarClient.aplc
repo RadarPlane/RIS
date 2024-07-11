@@ -6,68 +6,9 @@
       :Implements Constructor :Base args
     ∇
 
-    ∇ make _port
+    ∇ make _obj
       :Access public
       :Implements Constructor
-      ⍝ This means that we don't have any information on the client. Means that we are going to wait for a connection to init
-      Port←_port
-    ∇
-
-    ∇ Listen
-      :Access Public
-      _listen&Port
-    ∇
-
-    ∇ _listen pt;wait;data;event;obj;rc;r;threadName;threadDONE
-      :Access private
-      ⍝ Start a server thread to listen for more connections
-      ThreadName←('RIS',⍕#.RadarIngestSystem.t)
-      threadDONE←0
-      :If 0≠⊃r←#.RadarIngestSystem.DRC.Srv ThreadName''Port'Text' ⍝ start the server in Text mode
-          ⎕←'Unable to start RIS: ',⍕r
-      :Else
-          :If #.RadarIngestSystem.t=0
-              ⎕←'RIS started on port ',⍕Port
-          :EndIf
-          :While (~#.RadarIngestSystem.DONE)∧(~threadDONE)
-              rc obj event data←4↑wait←#.RadarIngestSystem.DRC.Wait ThreadName 1000 ⍝ Time out now and again
-              :Select rc
-              :Case 0
-                  :Select event
-                  :Case 'Connect'
-                      ⎕←'Connected!'
-                      Connected←1
-                      addr←#.RadarIngestSystem.DRC.GetProp obj'PeerAddr'
-                      a←a↑⍨⊃⌽⍸':'⍷a←↑1⌷↑1⌷addr
-                      bytes←↑2⌷↑1⌷addr
-                      :If (∨/'.'⍷a)∧(∨/'[::ffff:'⍷a) ⍝ Is embedded IPv4 in IPv6
-                          a←⊃{(⍕⍺),'.',(⍕⍵)}/¯4↑bytes
-                      :EndIf
-                      Address←a
-                      UUID←#.RadarIngestSystem.genUUID a ⍝ To be implemented
-                      RadarName←'Unknown' ⍝ To be implemented
-                      Position←(0 0) ⍝ To be implemented
-                      RadarProtocol←'raw'
-                      #.RadarIngestSystem.t+←1 ⍝ On connect, start another thread, to allow others to connect
-                      radar←⎕NEW #.RadarIngestSystem.RadarClient Port
-                      radar.Listen
-                      #.RadarIngestSystem.radarDb,←radar
-                  :Case 'Block'
-                       ⍝ Data received!
-                      ProcessMessage data
-                      ⍝⎕←'data!'
-                  :Case 'Closed'
-                      {}#.RadarIngestSystem.DRC.Close obj ⋄ threadDONE←1 ⍝ Close thread
-                  :Else
-                      {}#.RadarIngestSystem.DRC.Close obj ⋄ threadDONE←1 ⍝ Close thread
-                  :EndSelect
-              :Case 100  ⍝ Time out - Housekeeping Here
-              :Else
-                  ⎕←'Error in Wait: ',⍕wait ⋄ threadDONE←1
-              :EndSelect
-          :EndWhile
-          {}#.RadarIngestSystem.DRC.Close ThreadName
-          ⎕←'RIS Server terminated.'
-      :EndIf
+      CongaObjName←_obj
     ∇
 :EndClass
