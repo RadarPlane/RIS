@@ -1,0 +1,36 @@
+:Class Radar
+    :Field Public ThreadName ⍝ Name of the thread in conga
+    :Field Public Address ⍝ IP or URL
+    :Field Public Port ⍝ Port to either listen or connect
+    :Field Public UUID ⍝ UUID of radar. To be implemented later...
+    :Field Public RadarName ⍝ Radar will send it's name. To be implemented later...
+    :Field Public Position ⍝ Vector, (lat lon), reference position of the radar. NOT Fuzzed, not safe to display publicly
+    :Field Public LastActive ⍝ Last known message timestamp
+    :Field Public RadarProtocol ⍝ Protocol of the radar
+    :Field Public TotalMessages←0
+    :Field Public Shared ReadOnly Type←¯1 ⍝ ¯1:nothing,0:client,1:server. Client means that the Radar connects to RIS. Server means that RIS connects to the Radar.
+
+    :Field Public Connected ⍝ Is the Radar connected to RIS? Whether client or server.
+    ⍝ If the Radar is not connected, chances are that this is a Client, and we are waiting for something to connect.
+    ∇ make5(_threadName _addr _port _uuid _pos)
+      :Access public
+      :Implements constructor
+      ⍝ args is a vector: threadName, addr, port, uuid, pos
+      (ThreadName Address Port UUID Position)←(_threadName _addr _port _uuid _pos)
+    ∇
+
+    ∇ MessageProcessed ⍝ Run this whenever a message has been finished being processed
+      :Access Public
+      LastActive←⎕TS
+      TotalMessages+←1
+    ∇
+
+    ⍝ Maybe the extended classes could have something like Connect or Listen methods.
+
+    ∇ ProcessMessage data
+      :Access Public
+      ⍝ TODO. Pass ⎕THIS to the process function, along with the message, I think.
+      #.RadarIngestSystem.process data ⎕THIS
+      MessageProcessed
+    ∇
+:EndClass

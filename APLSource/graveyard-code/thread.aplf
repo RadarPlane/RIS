@@ -1,4 +1,7 @@
  thread port;wait;data;event;obj;rc;r;threadName;threadDONE
+⍝⍝⍝⍝⍝⍝ Not used
+
+
  ⍝ Start a server thread to listen for more connections
  threadName←('RIS',⍕t)
  threadDONE←0
@@ -26,7 +29,7 @@
              :EndSelect
          :Case 100  ⍝ Time out - Housekeeping Here
          :Else
-             ⎕←'Error in Wait: ',⍕wait ⋄ threadDONE←1 
+             ⎕←'Error in Wait: ',⍕wait ⋄ threadDONE←1
          :EndSelect
      :EndWhile
      {}DRC.Close threadName

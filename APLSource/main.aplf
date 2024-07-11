@@ -1,9 +1,12 @@
- main port
+ main port;radar
  DRC←Conga.Init''
     ⍝ RIS (Port 30001 usually)
  DONE←0 ⍝ Set global DONE to 1 to stop service
  ⎕IO←0
-
+ (DRC.SetProp'.' 'Protocol' 'IPV4')
  db←0 25⍴⍬ ⍝ ICAO, CS, CAT, clate clato clone clono et ot lat lon alt gclate gclato gclone gclono get got track speed tracktype(1:Mag, 0:GNSS) speedtype(0: GS, 1: IAS, 2: TAS) ifrcap vertrate diffGNSSBaro
+ radarDb←⍬ ⍝ Vector of radars
  t←0 ⍝ Thread number
- thread & port
+ radar←⎕NEW RadarClient port
+ radar.Listen
+ radarDb,←radar

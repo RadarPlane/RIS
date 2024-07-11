@@ -1,6 +1,6 @@
  process←{
     ⍝ Process the raw data sent to the server
-     data←⍵
+     data radar←⍵
      ⍝⎕←'New Line, Processing',⍴data
 
      ⍝ IF multi line, but this does not happen often, unless there is some netcat repeating or buffering.
