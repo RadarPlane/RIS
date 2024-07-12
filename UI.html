@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Server Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        #data-table {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <h1>Client Data</h1>
+    <div id="data-table">
+        <!-- Data will be appended here -->
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchData();
+        });
+
+        function fetchData() {
+            fetch('http://localhost:8182/ListServers', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => displayData(data))
+            .catch(error => console.error('Error fetching data:', error));
+        }
+
+        function displayData(data) {
+            const dataTableDiv = document.getElementById('data-table');
+            const clients = data.data;
+
+            let table = `<table>
+                            <thead>
+                                <tr>
+                                    <th>Closed</th>
+                                    <th>FirstActive</th>
+                                    <th>IP</th>
+                                    <th>LastActive</th>
+                                    <th>ObjectName</th>
+                                    <th>Port</th>
+                                    <th>Position</th>
+                                    <th>RadarName</th>
+                                    <th>RadarProtocol</th>
+                                    <th>TotalMessages</th>
+                                    <th>UUID</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+            clients.forEach(client => {
+                table += `<tr>
+                            <td>${client.Closed}</td>
+                            <td>${formatDate(client.FirstActive)}</td>
+                            <td>${client.IP}</td>
+                            <td>${formatDate(client.LastActive)}</td>
+                            <td>${client.ObjectName}</td>
+                            <td>${client.Port}</td>
+                            <td>${client.Position.join(', ')}</td>
+                            <td>${client.RadarName}</td>
+                            <td>${client.RadarProtocol}</td>
+                            <td>${client.TotalMessages}</td>
+                            <td>${client.UUID}</td>
+                          </tr>`;
+            });
+
+            table += `</tbody>
+                      </table>`;
+
+            dataTableDiv.innerHTML = table;
+        }
+
+        function formatDate(dateArray) {
+            return new Date(Date.UTC(
+                dateArray[0], dateArray[1] - 1, dateArray[2], 
+                dateArray[3], dateArray[4], dateArray[5], dateArray[6]
+            )).toLocaleString();
+        }
+    </script>
+</body>
+</html>
