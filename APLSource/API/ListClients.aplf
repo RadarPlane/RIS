@@ -1,0 +1,7 @@
+r←req ListClients _
+ r←⎕NS ⍬
+ :Trap 0
+     r.data←##.r.Clients.GenerateExportObject
+ :Else
+     r.data←⍬
+ :EndTrap

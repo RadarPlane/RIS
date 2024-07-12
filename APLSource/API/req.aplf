@@ -1,0 +1,5 @@
+ r←req index
+ r←⎕NS ⍬
+ r.version←##.CiderConfig.CIDER.version
+ r.latestAPIVersion←1
+ r.data←2 2⍴⍳4

@@ -1,0 +1,7 @@
+ r←req ListServers _
+ r←⎕NS ⍬
+ :Trap 0
+    r.data←##.r.Servers.GenerateExportObject
+ :Else
+     r.data←⍬
+ :EndTrap

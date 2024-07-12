@@ -1,0 +1,16 @@
+ r←Get req;parts
+ parts←'/'(≠⊆⊢)req.Endpoint ⍝ split the endpoint
+ r←⎕NS ⍬
+
+ :If ''≡⊃parts
+     ⎕←'aaa'
+     r←index req
+ :EndIf
+ :Select ⊃parts
+ :Case 'dAFG'
+     r←req GetCustomers 1↓parts
+ :Else
+     r←'404'
+     ⎕←'error'
+     req.Fail 404
+ :EndSelect
