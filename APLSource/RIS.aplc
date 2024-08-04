@@ -1,15 +1,17 @@
 :Class RIS
 
     :field public shared Version←'RIS' '0.1' '11-Jul-2024'
+    :field public shared DbHeader←'ICAO' 'CS' 'CAT' 'clate' 'clato' 'clone' 'clono' 'et' 'ot' 'lat' 'lon' 'alt' 'gclate' 'gclato' 'gclone' 'gclono' 'get' 'got' 'track' 'speed' 'tracktype' 'speedtype' 'ifrcap' 'vertrate' 'diffGNSSBaro'
 
     :field public ServerPort←0         ⍝ set to non-zero if starting a server
-    :field public Buffer←0 25⍴⍬        ⍝ initial database buffer
+    :field public Buffer←(0,(⍴DbHeader))⍴⍬        ⍝ initial database buffer
     :field public BufferLimit←1E5      ⍝ limit to 100,000 rows
     :field public Clients←⍬            ⍝ vector of client object
     :field public Servers←⍬            ⍝ vector of client object
     :field public CongaWaitTime←5000   ⍝ ms to wait in Conga.Wait
     :field public IPV←'IP'             ⍝ IP version to use
     :field public DRC
+    :field public JSrv
 
     :field _serverName
     :field _stop←1                     ⍝ set to 1 to stop listeners
@@ -50,6 +52,7 @@
     ∇ (rc msg)←Start;rc;server
       :Access public
       (rc msg)←0 ''
+      ⎕←#.⎕NL-⍳9
       _stop←0
       :If 0≠ServerPort
           :If 0≠⊃(rc _serverName msg)←3↑DRC.Srv'' ''ServerPort'Text'
@@ -57,6 +60,7 @@
               →0
           :EndIf
           listen&_serverName
+          JSrv _←##.Jarvis.Run(8080 API'JSON')
       :EndIf
      
       :For server :In Servers
@@ -67,11 +71,11 @@
     ∇ Stop;server
       :Access public
       _stop←1
+      _←JSrv.Stop
       :For server :In Servers
           server.Stop
       :EndFor
     ∇
-
     ∇ listen name;rc;obj;evt;data
       :While ~_stop
           (rc obj evt data)←4↑DRC.Wait name CongaWaitTime
@@ -208,7 +212,7 @@
         ∇ (rc msg)←Start;rc
           :Access public
           (rc msg)←0 ''
-          :If 0≠⊃(rc ObjectName msg)←3↑DRC.Clt''IP Port'Text'
+          :If 0≠⊃(rc ObjectName msg)←3↑DRC.Clt''IP Port'Text' ⍝ This can hang - Unable to kill without kill -9. Not sure how to have a time out error.
               msg←'Unable to start client to ',(IP,':',⍕Port)
               →0
           :EndIf
@@ -309,4 +313,28 @@
           obj.TotalMessages←TotalMessages
         ∇
     :EndClass
+    :NameSpace API
+        ∇ r←req index _
+          r←⎕NS ⍬
+          r.version←##.##.CiderConfig.CIDER.version
+          r.latestAPIVersion←1
+          r.data←2 2⍴⍳4
+        ∇
+        ∇ r←req ListClients _
+          r←⎕NS ⍬
+          :Trap 0
+              r.data←##.Clients.GenerateExportObject
+          :Else
+              r.data←⍬
+          :EndTrap
+        ∇
+        ∇ r←req ListServers _
+          r←⎕NS ⍬
+          :Trap 0
+              r.data←##.Servers.GenerateExportObject
+          :Else
+              r.data←⍬
+          :EndTrap
+        ∇
+     :EndNameSpace
 :EndClass
