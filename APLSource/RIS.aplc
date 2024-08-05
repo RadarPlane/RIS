@@ -313,14 +313,16 @@
           obj.TotalMessages←TotalMessages
         ∇
     :EndClass
-    :NameSpace API
+    :Namespace API
         ∇ r←req index _
+          :Access Public
           r←⎕NS ⍬
           r.version←##.##.CiderConfig.CIDER.version
           r.latestAPIVersion←1
           r.data←2 2⍴⍳4
         ∇
         ∇ r←req ListClients _
+          :Access Public
           r←⎕NS ⍬
           :Trap 0
               r.data←##.Clients.GenerateExportObject
@@ -329,6 +331,7 @@
           :EndTrap
         ∇
         ∇ r←req ListServers _
+          :Access Public
           r←⎕NS ⍬
           :Trap 0
               r.data←##.Servers.GenerateExportObject
@@ -336,5 +339,5 @@
               r.data←⍬
           :EndTrap
         ∇
-     :EndNameSpace
+    :EndNameSpace
 :EndClass
