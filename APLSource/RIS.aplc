@@ -12,6 +12,7 @@
     :field public IPV←'IP'             ⍝ IP version to use
     :field public DRC
     :field public JSrv
+    :field public API
 
     :field _serverName
     :field _stop←1                     ⍝ set to 1 to stop listeners
@@ -37,6 +38,7 @@
       DRC←##.Conga.Init''
       {}DRC.SetProp'.' 'EventMode' 1
       {}DRC.SetProp'.' 'Protocol'IPV
+      API←⎕New _api
       ⍝Clients←0 2⍴⊂'' ⍝ [;1] Conga name [;2] (Instance of Client Class)
     ∇
 
@@ -60,7 +62,7 @@
               →0
           :EndIf
           listen&_serverName
-          JSrv _←##.Jarvis.Run(8080 API'JSON')
+          JSrv _←##.Jarvis.Run(8080 API 'JSON')
       :EndIf
      
       :For server :In Servers
@@ -313,16 +315,16 @@
           obj.TotalMessages←TotalMessages
         ∇
     :EndClass
-    :Namespace API
+    :Class _api
         ∇ r←req index _
-          :Access Public
+          :Access Public Instance
           r←⎕NS ⍬
           r.version←##.##.CiderConfig.CIDER.version
           r.latestAPIVersion←1
           r.data←2 2⍴⍳4
         ∇
         ∇ r←req ListClients _
-          :Access Public
+          :Access Public Instance
           r←⎕NS ⍬
           :Trap 0
               r.data←##.Clients.GenerateExportObject
@@ -331,7 +333,7 @@
           :EndTrap
         ∇
         ∇ r←req ListServers _
-          :Access Public
+          :Access Public Instance
           r←⎕NS ⍬
           :Trap 0
               r.data←##.Servers.GenerateExportObject
@@ -339,5 +341,5 @@
               r.data←⍬
           :EndTrap
         ∇
-    :EndNameSpace
+    :EndClass
 :EndClass
