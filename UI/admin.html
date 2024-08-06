@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Panel</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+    margin: 0;
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+}
+#data-table {
+    margin-top: 20px;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+th, td {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    text-align: left;
+}
+th {
+    background-color: #f4f4f4;
+}
+tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+#api-key-input {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+}
+#api-key-input input {
+    padding: 5px;
+    font-size: 16px;
+}
+#api-key-input button {
+    padding: 5px 10px;
+    font-size: 16px;
+    margin-left: 10px;
+}
+#error-message {
+    color: red;
+    text-align: center;
+}
+</style>
+</head>
+<body>
+<h1>Radar Data</h1>
+<div id="api-key-input">
+    <input type="text" id="apikey" placeholder="Enter your API Key">
+    <button onclick="saveApiKey()">Save API Key</button>
+</div>
+<div id="error-message"></div>
+<div id="data-table">
+<!-- Data will be appended here -->
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const storedApiKey = getCookieValue('apiKey');
+    if (storedApiKey) {
+        document.getElementById('apikey').value = storedApiKey; // Set input value to the stored API key
+        fetchData(storedApiKey);
+        setInterval(() => fetchData(storedApiKey), 5000); // Reload every 5 seconds
+    }
+});
+
+function saveApiKey() {
+    const apiKey = document.getElementById('apikey').value;
+    if (apiKey) {
+        document.cookie = `apiKey=${apiKey}; path=/; max-age=31536000`; // Store for 1 year
+        fetchData(apiKey);
+        setInterval(() => fetchData(apiKey), 5000); // Reload every 5 seconds
+    }
+}
+
+function getCookieValue(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+}
+
+function fetchData(apiKey) {
+    fetch('/api/ListServers', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': apiKey
+        },
+        body: JSON.stringify({})
+    })
+    .then(response => {
+        if (response.status === 403) {
+            throw new Error('Forbidden: Invalid API Key');
+        }
+        return response.json();
+    })
+    .then(serverData => {
+        return fetch('/api/ListClients', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': apiKey
+            },
+            body: JSON.stringify({})
+        })
+        .then(response => {
+            if (response.status === 403) {
+                throw new Error('Forbidden: Invalid API Key');
+            }
+            return response.json();
+        })
+        .then(clientData => displayData(clientData, serverData))
+    })
+    .catch(error => {
+        document.getElementById('error-message').textContent = error.message;
+    });
+}
+
+function displayData(clientData, serverData) {
+    const dataTableDiv = document.getElementById('data-table');
+    const servers = serverData.data;
+    const clients = clientData.data;
+    let table = `<table>
+        <thead>
+            <tr>
+                <th>Type</th>
+                <th>IP</th>
+                <th>Port</th>
+                <th>UUID</th>
+                <th>RadarName</th>
+                <th>TotalMessages</th>
+                <th>Closed</th>
+                <th>FirstActive</th>
+                <th>LastActive</th>
+                <th>Position</th>
+                <th>RadarProtocol</th>
+                <th>ObjectName</th>
+            </tr>
+        </thead>
+        <tbody>`;
+    servers.forEach(server => {
+        table += `<tr>
+            <td>Server</td>
+            <td>${server.IP}</td>
+            <td>${server.Port}</td>
+            <td>${server.UUID}</td>
+            <td>${server.RadarName}</td>
+            <td>${server.TotalMessages}</td>
+            <td>${server.Closed ? 'true' : 'false'}</td>
+            <td>${formatDate(server.FirstActive)}</td>
+            <td>${formatDate(server.LastActive)}</td>
+            <td>${server.Position.join(', ')}</td>
+            <td>${server.RadarProtocol}</td>
+            <td>${server.ObjectName}</td>
+        </tr>`;
+    });
+    clients.forEach(client => {
+        table += `<tr>
+            <td>Client</td>
+            <td>${client.IP}</td>
+            <td>${client.Port}</td>
+            <td>${client.UUID}</td>
+            <td>${client.RadarName}</td>
+            <td>${client.TotalMessages}</td>
+            <td>${client.Closed ? 'true' : 'false'}</td>
+            <td>${formatDate(client.FirstActive)}</td>
+            <td>${formatDate(client.LastActive)}</td>
+            <td>${client.Position.join(', ')}</td>
+            <td>${client.RadarProtocol}</td>
+            <td>${client.ObjectName}</td>
+        </tr>`;
+    });
+    table += `</tbody>
+    </table>`;
+    dataTableDiv.innerHTML = table;
+}
+
+function formatDate(dateArray) {
+    return new Date(Date.UTC(
+        dateArray[0], dateArray[1] - 1, dateArray[2],
+        dateArray[3], dateArray[4], dateArray[5], dateArray[6]
+    )).toLocaleString();
+}
+</script>
+</body>
+</html>

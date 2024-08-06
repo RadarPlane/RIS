@@ -1,5 +1,4 @@
 :Class RIS
-
     :field public shared Version←'RIS' '0.1' '11-Jul-2024'
     :field public shared DbHeader←'ICAO' 'CS' 'CAT' 'clate' 'clato' 'clone' 'clono' 'et' 'ot' 'lat' 'lon' 'alt' 'gclate' 'gclato' 'gclone' 'gclono' 'get' 'got' 'track' 'speed' 'tracktype' 'speedtype' 'ifrcap' 'vertrate' 'diffGNSSBaro'
 
@@ -12,7 +11,8 @@
     :field public IPV←'IP'             ⍝ IP version to use
     :field public DRC
     :field public JSrv
-    :field public API
+    :field public instance Web
+    :field public APIKeys
 
     :field _serverName
     :field _stop←1                     ⍝ set to 1 to stop listeners
@@ -33,12 +33,14 @@
       make_common
     ∇
 
-    ∇ make_common
+    ∇ make_common;iapikey
+      Web←⎕NS _web
       LoadConga
       DRC←##.Conga.Init''
+      APIKeys←,⊂iapikey←genUUID 1
+      ⎕←'Initial API Key: ',iapikey
       {}DRC.SetProp'.' 'EventMode' 1
       {}DRC.SetProp'.' 'Protocol'IPV
-      API←⎕New _api
       ⍝Clients←0 2⍴⊂'' ⍝ [;1] Conga name [;2] (Instance of Client Class)
     ∇
 
@@ -62,7 +64,9 @@
               →0
           :EndIf
           listen&_serverName
-          JSrv _←##.Jarvis.Run(8080 API 'JSON')
+          JSrv _←##.Jarvis.Run(8080 Web'JSON')
+          JSrv.AllowGETs←1
+          JSrv.Debug←1
       :EndIf
      
       :For server :In Servers
@@ -72,11 +76,18 @@
 
     ∇ Stop;server
       :Access public
-      _stop←1
-      _←JSrv.Stop
-      :For server :In Servers
-          server.Stop
-      :EndFor
+      :If _stop=0
+          _stop←1
+          _←JSrv.Stop
+          :For server :In Servers
+              server.Stop
+          :EndFor
+      :EndIf
+    ∇
+
+    ∇ RL
+      :Access Public
+      Web←⎕NS _web
     ∇
     ∇ listen name;rc;obj;evt;data
       :While ~_stop
@@ -161,7 +172,7 @@
     ∇
 
     ∇ radar processMsg msg;data;datap;fmt
-      :Trap 0
+      ⍝:Trap 0
           data←1↓msg
              ⍝0::⍬⍝⎕←'Error Processing: Continuing without'
           datap←,↑((4⍴2)⊤⊢)¨{⍵⍳⍨⎕D,⎕A}data ⍝ Convert to bin
@@ -171,10 +182,10 @@
               Buffer←##.adsbProcess Buffer radar datap
               radar.MessageProcessed
           :EndIf
-      :Else
+      ⍝:Else
             ⍝ Error Processing, continuing without...
-          ⎕←'error processing'
-      :EndTrap
+       ⍝   ⎕←'error processing'
+      ⍝:EndTrap
     ∇
 
     ∇ LoadConga
@@ -315,31 +326,102 @@
           obj.TotalMessages←TotalMessages
         ∇
     :EndClass
-    :Class _api
-        ∇ r←req index _
-          :Access Public Instance
-          r←⎕NS ⍬
-          r.version←##.##.CiderConfig.CIDER.version
-          r.latestAPIVersion←1
-          r.data←2 2⍴⍳4
+
+    ∇ r←Authenticated req;key
+      :Access Public Instance
+      ⍝ Takes the Jarvis request, and checks if user is properly authenticated
+      key←req.GetHeader'Authorization'
+      r←(⊂key)∊APIKeys
+    ∇
+    :Namespace _web
+        :Namespace api
+            ∇ r←req index _
+              r←⎕NS ⍬
+              ris←##.##
+              :If ~ris.Authenticated req
+                  'Not Authenticated'req.Fail 403
+                  r.success←'false'
+                  r.errorMessage←'Not Authenticated'
+              :Else
+                  r.version←ris.Version
+                  r.latestAPIVersion←1
+              :EndIf
+            ∇
+            ∇ r←req ListClients _;clts
+              r←⎕NS ⍬
+              ris←##.##
+              :If ~ris.Authenticated req
+                  'Not Authenticated'req.Fail 403
+                  r.success←'false'
+                  r.errorMessage←'Not Authenticated'
+              :Else
+                  clts←ris.Clients
+                  :If ⍬≡clts
+                      r.success←'true'
+                      r.data←⍬
+                  :Else
+                      :Trap 0
+                          r.data←clts.GenerateExportObject
+                          r.success←'true'
+                      :Else
+                          'Error Trapped'req.Fail 500
+                          r.success←'false'
+                          r.data←⍬
+                      :EndTrap
+                  :EndIf
+              :EndIf
+            ∇
+            ∇ r←req ListServers _;srvs
+              r←⎕NS ⍬
+              ris←##.##
+              :If ~ris.Authenticated req
+                  'Not Authenticated'req.Fail 403
+                  r.success←'false'
+                  r.errorMessage←'Not Authenticated'
+              :Else
+                  srvs←ris.Servers
+                  :If ⍬≡srvs
+                      r.success←'true'
+                      r.data←⍬
+                  :Else
+                      :Trap 0
+                          r.data←srvs.GenerateExportObject
+                      :Else
+                          req.Fail 500
+                          r.success←'false'
+                          r.data←⍬
+                      :EndTrap
+                  :EndIf
+              :EndIf
+            ∇
+            ∇ r←req ListPlanes _
+              r←⎕NS ⍬
+              ris←##.##
+              :If ~ris.Authenticated req
+                  'Not Authenticated'req.Fail 403
+                  r.success←'false'
+                  r.errorMessage←'Not Authenticated'
+              :Else
+                  :Trap 0
+                      r.success←'true'
+                      r.data←1↓0∘(⌷{(⎕NS ⍬)(⊣⊣⍎)⍕⍺'←⍵'}⍤1↓)({⍵⌿⍨~∨/{⍬≡⍵}¨⍵}(ris.DbHeader⍪ris.Buffer)[;0 1 2 9 10 11 18 19 20 21 22 23 24])
+                  :Else
+                      req.Fail 500
+                      r.success←'false'
+                      r.data←⍬
+                  :EndTrap
+              :EndIf
+            ∇
+        :EndNameSpace
+        ∇ r←req AdminUI _;file
+          req.Response.Headers←1 2⍴'Content-Type' 'text/html; charset=utf-8'
+          file←⎕NGET ##.##.CiderConfig.HOME,'/UI/admin.html'
+          r←⊃file
         ∇
-        ∇ r←req ListClients _
-          :Access Public Instance
-          r←⎕NS ⍬
-          :Trap 0
-              r.data←##.Clients.GenerateExportObject
-          :Else
-              r.data←⍬
-          :EndTrap
+        ∇ r←req PlanesUI _;file
+          req.Response.Headers←1 2⍴'Content-Type' 'text/html; charset=utf-8'
+          file←⎕NGET ##.##.CiderConfig.HOME,'/UI/planes.html'
+          r←⊃file
         ∇
-        ∇ r←req ListServers _
-          :Access Public Instance
-          r←⎕NS ⍬
-          :Trap 0
-              r.data←##.Servers.GenerateExportObject
-          :Else
-              r.data←⍬
-          :EndTrap
-        ∇
-    :EndClass
+    :Endnamespace
 :EndClass
