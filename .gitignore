@@ -80,3 +80,6 @@ $RECYCLE.BIN/
 tatin-dependencies/*
 !tatin-dependencies/apl-dependencies.txt
 !tatin-dependencies/apl-buildlist.json
+
+
+.mapkey

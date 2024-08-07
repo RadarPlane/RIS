@@ -30,7 +30,7 @@
      dbr[5+evenorodd]←lonc
      tOld←dbr[7+evenorodd]
      dbr[7+evenorodd]←t
-     lat lon←{(~0∊⍴∊⍵[3])∧(~0∊⍴∊⍵[4]):##.calcAirPos ⍵[3 4 5 6 7 8] ⋄ ⍬ ⍬}dbr
+     lat lon←{(~0∊⍴∊⍵[3])∧(~0∊⍴∊⍵[4]):##.calcAirPos ⍵[3 4 5 6 7 8] ⋄ ⍬ ⍬}dbr ⍝ If the plane has just crossed a boundary, it won't be accurate...
 
      :If (⍬≡lat)∨(⍬≡lon) ⍝ Did we even calculate a lat and lon?
 

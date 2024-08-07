@@ -1,193 +1,380 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Radar Data</title>
-<style>
-body {
-    font-family: Arial, sans-serif;
-    background-color: #f0f0f0;
-    margin: 0;
-    padding: 20px;
-}
-h1 {
-    text-align: center;
-}
-#data-container {
-    display: flex;
-    justify-content: space-between;
-    margin-top: 20px;
-}
-#data-table {
-    width: 60%;
-}
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 10px;
-}
-th, td {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    text-align: left;
-}
-th {
-    background-color: #f4f4f4;
-}
-tr:nth-child(even) {
-    background-color: #f9f9f9;
-}
-#api-key-input {
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: center;
-}
-#api-key-input input {
-    padding: 5px;
-    font-size: 16px;
-}
-#api-key-input button {
-    padding: 5px 10px;
-    font-size: 16px;
-    margin-left: 10px;
-}
-#error-message {
-    color: red;
-    text-align: center;
-}
-#map {
-    width: 35%;
-    height: 600px;
-}
-</style>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radar Data</title>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Hide the overflow to prevent scrolling */
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 1;
+        }
+        #controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000; /* Ensure it appears above the map */
+        }
+        #menu-bar {
+            display: flex;
+            align-items: center;
+        }
+        #menu-bar button {
+            margin-right: 10px;
+            padding: 6px 12px;
+            font-size: 14px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #api-key-input {
+            display: flex;
+            align-items: center;
+        }
+        #api-key-input input {
+            padding: 5px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        #api-key-input button {
+            margin-left: 10px;
+            padding: 6px 12px;
+            font-size: 14px;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #error-message {
+            position: absolute;
+            top: 60px;
+            left: 10px;
+            background: rgba(255, 0, 0, 0.8);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            display: none;
+            z-index: 1000; /* Ensure it appears above the map */
+        }
+        #data-table-container {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            left: 10px;
+            height: 200px;
+            overflow-y: auto;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            z-index: 1000; /* Ensure it appears above the map */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+            color: #555;
+        }
+        tr:nth-child(even) {
+            background-color: #fafafa;
+        }
+        #plane-info-bar {
+            /* position: absolute; */
+            /* width: calc(100% - 20px); */
+            /* bottom: 220px; */
+            /* left: 10px; */
+            /* right: 10px; */
+            background: rgba(51, 51, 51, 0.9);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 5px;
+            display: none;
+            text-align: center;
+            z-index: 10005; /* Ensure it appears above the map */
+        }
+        .highlight {
+            border: 2px solid red;
+        }
+        /* Custom styles to adjust the Leaflet controls */
+        .leaflet-top {
+            top: 70px !important; /* Adjust to move the controls below the top bar */
+        }
+    </style>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-rotatedmarker@0.2.0/leaflet.rotatedMarker.min.js"></script>
 </head>
 <body>
-<h1>Radar Data</h1>
-<div id="api-key-input">
-<input type="text" id="apikey" placeholder="Enter your API Key">
-<button onclick="saveApiKey()">Save API Key</button>
-</div>
-<div id="error-message"></div>
-<div id="data-container">
-    <div id="data-table">
-        <!-- Data will be appended here -->
-    </div>
     <div id="map"></div>
-</div>
+    <div id="controls">
+        <div id="menu-bar">
+            <button onclick="window.location.href = '/PlanesUI'">Radar</button>
+            <button onclick="window.location.href = '/AdminUI'">Admin</button>
+            <!-- <button onclick="console.log('Logout clicked')">Logout</button> -->
+        </div>
+        <div id="api-key-input">
+            <input type="text" id="apikey" placeholder="Enter your API Key">
+            <button onclick="saveApiKey()">Save API Key</button>
+        </div>
+        <div id="error-message"></div>
+    </div>
+    <div id="data-table-container" class="overlay">
+        <div id="plane-info-bar"></div>
+        <div id="data-table">
+            <!-- Data will be appended here -->
+        </div>
+    </div>
+    <script>
+        let map;
+        let markers = {};
+        let selectedMarker = null;
+        let baseMaps;
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const storedApiKey = getCookieValue('apiKey');
+            const storedMapLayer = getCookieValue('mapLayer');
+            if (storedApiKey) {
+                document.getElementById('apikey').value = storedApiKey;
+                initMap(storedMapLayer);
+                fetchData(storedApiKey);
+                setInterval(() => fetchData(storedApiKey), 5000);
+            }
+        });
 
-<script>
-let map;
-let markers = [];
-
-document.addEventListener('DOMContentLoaded', () => {
-    const storedApiKey = getCookieValue('apiKey');
-    if (storedApiKey) {
-        document.getElementById('apikey').value = storedApiKey; // Set input value to the stored API key
-        initMap();
-        fetchData(storedApiKey);
-        setInterval(() => fetchData(storedApiKey), 5000); // Reload every 5 seconds
-    }
-});
-
-function saveApiKey() {
-    const apiKey = document.getElementById('apikey').value;
-    if (apiKey) {
-        document.cookie = `apiKey=${apiKey}; path=/; max-age=31536000`; // Store for 1 year
-        if (!map) {
-            initMap();
+        function saveApiKey() {
+            const apiKey = document.getElementById('apikey').value;
+            if (apiKey) {
+                document.cookie = `apiKey=${apiKey}; path=/; max-age=31536000`;
+                document.cookie = `mapLayer=${map.currentBaseLayer}; path=/; max-age=31536000`;
+                document.getElementById('error-message').style.display = 'none'; // clear error message
+                if (!map) {
+                    initMap(getCookieValue('mapLayer'));
+                }
+                fetchData(apiKey);
+                setInterval(() => fetchData(apiKey), 5000);
+            }
         }
-        fetchData(apiKey);
-        setInterval(() => fetchData(apiKey), 5000); // Reload every 5 seconds
-    }
-}
 
-function getCookieValue(name) {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-    return null;
-}
-
-function fetchData(apiKey) {
-    fetch('/api/ListPlanes', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': apiKey
+        function getCookieValue(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
         }
-    })
-    .then(response => {
-        if (response.status === 403) {
-            throw new Error('Forbidden: Invalid API Key');
+
+        function fetchData(apiKey) {
+            fetch('/api/ListPlanes', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': apiKey
+                }
+            })
+            .then(response => {
+                if (response.status === 403) {
+                    throw new Error('Forbidden: Invalid API Key');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success === "true") {
+                    displayData(data.data);
+                    updateMap(data.data);
+                }
+            })
+            .catch(error => {
+                document.getElementById('error-message').textContent = error.message;
+                document.getElementById('error-message').style.display = 'block';
+            });
         }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success === "true") {
-            displayData(data.data);
-            updateMap(data.data);
+
+        function displayData(planeData) {
+            const dataTableDiv = document.getElementById('data-table');
+            let table = `<table>
+                <thead>
+                <tr>
+                    <th>Call Sign</th>
+                    <th>ICAO</th>
+                    <th>Altitude (ft)</th>
+                    <th>Vertical Speed</th>
+                    <th>Speed (knots)</th>
+                    <th>Track (°)</th>
+                    <th>Latitude</th>
+                    <th>Longitude</th>
+                    <th>Last Updated</th>
+                </tr>
+                </thead>
+                <tbody>`;
+            planeData.forEach(plane => {
+                table += `<tr>
+                    <td>${plane.CS || 'Unknown'}</td>
+                    <td>${plane.ICAO || 'Unknown'}</td>
+                    <td>${plane.alt || 0}</td>
+                    <td>${plane.vertrate || 0}</td>
+                    <td>${plane.speed ? plane.speed.toFixed(2) : 0}</td>
+                    <td>${plane.track ? plane.track.toFixed(2) : 0}</td>
+                    <td>${plane.lat ? plane.lat.toFixed(5) : '0.00000'}</td>
+                    <td>${plane.lon ? plane.lon.toFixed(5) : '0.00000'}</td>
+                    <td>${plane.LastUpdate ? nanosecondsToDateString(plane.LastUpdate).toLocaleString() : 0}</td>
+                </tr>`;
+            });
+            table += `</tbody></table>`;
+            dataTableDiv.innerHTML = table;
         }
-    })
-    .catch(error => {
-        document.getElementById('error-message').textContent = error.message;
-    });
-}
 
-function displayData(planeData) {
-    const dataTableDiv = document.getElementById('data-table');
-    let table = `<table>
-        <thead>
-        <tr>
-            <th>Call Sign</th>
-            <th>ICAO</th>
-            <th>Altitude (ft)</th>
-            <th>Speed (knots)</th>
-            <th>Latitude</th>
-            <th>Longitude</th>
-            <th>Track (°)</th>
-            <th>Vertical Rate</th>
-        </tr>
-        </thead>
-        <tbody>`;
-    planeData.forEach(plane => {
-        table += `<tr>
-            <td>${plane.CS != [] ? plane.CS : 'Unknown'}</td>
-            <td>${plane.ICAO != [] ? plane.ICAO : 'Unknown'}</td>
-            <td>${plane.alt != [] ? plane.alt : 0}</td>
-            <td>${plane.speed != [] ? plane.speed.toFixed(2) : 0}</td>
-            <td>${plane.lat != [] ? plane.lat.toFixed(5) : '0.00000'}</td>
-            <td>${plane.lon != [] ? plane.lon.toFixed(5) : '0.00000'}</td>
-            <td>${plane.track != [] ? plane.track.toFixed(2) : 0}</td>
-            <td>${plane.vertrate != [] ? plane.vertrate : 0}</td>
-        </tr>`;
-    });
-    table += `</tbody></table>`;
-    dataTableDiv.innerHTML = table;
-}
-
-function initMap() {
-    map = L.map('map').setView([0, 0], 2);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-}
-
-function updateMap(planeData) {
-    markers.forEach(marker => map.removeLayer(marker));
-    markers = [];
-
-    planeData.forEach(plane => {
-        if (plane.lat && plane.lon) {
-            const marker = L.marker([plane.lat, plane.lon]).addTo(map);
-            let popupContent = `<b>${plane.CS || 'Unknown'}</b><br>Altitude: ${plane.alt} ft<br>Speed: ${plane.speed} knots`;
-            marker.bindPopup(popupContent);
-            markers.push(marker);
+        function nanosecondsToDateString(nanoseconds) {
+            const epochStart = new Date('2000-01-01T00:00:00Z');
+            const milliseconds = nanoseconds / 1e6;
+            const date = new Date(epochStart.getTime() + milliseconds);
+            return date;
         }
-    });
-}
-</script>
+
+        function initMap(storedMapLayer) {
+            map = L.map('map', {
+                center: [0, 0],
+                zoom: 2,
+            });
+            const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            });
+            const satellite = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/satellite-v9/tiles/256/{z}/{x}/{y}@2x?access_token=REPLACEME', {
+                attribution: '© Mapbox © OpenStreetMap',
+            });
+            const terrain = L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/outdoors-v11/tiles/256/{z}/{x}/{y}@2x?access_token=REPLACEME', {
+                attribution: '© Mapbox © OpenStreetMap',
+            });
+
+            baseMaps = {
+                "OpenStreetMap": osm,
+                "Satellite": satellite,
+                "Terrain": terrain
+            };
+
+            const selectedLayer = baseMaps[storedMapLayer] || osm;
+            selectedLayer.addTo(map);
+            L.control.layers(baseMaps).addTo(map);
+
+            map.currentBaseLayer = 'OpenStreetMap'; // Default Layer
+
+            map.on('baselayerchange', function(eventLayer) {
+                map.currentBaseLayer = eventLayer.name; // Store the current layer name
+            });
+
+            map.on('click', function (e) {
+                if (selectedMarker) {
+                    selectedMarker.setIcon(L.icon({
+                        iconUrl: 'https://radarplane.com/images/map-icons/aircraft/airliner.png',
+                        iconSize: [34, 34],
+                        iconAnchor: [17, 17]
+                    }));
+                    selectedMarker.setZIndexOffset(0);
+                    selectedMarker = null;
+                    document.getElementById('plane-info-bar').style.display = 'none';
+                }
+            });
+        }
+
+        function updateMap(planeData) {
+            const planeIcaos = planeData.map(plane => plane.ICAO);
+            const planeIcaoSet = new Set(planeIcaos);
+            Object.keys(markers).forEach(icao => {
+                if (!planeIcaoSet.has(icao)) {
+                    if (selectedMarker === markers[icao]) {
+                        selectedMarker = null;
+                        document.getElementById('plane-info-bar').style.display = 'none';
+                    }
+                    map.removeLayer(markers[icao]);
+                    delete markers[icao];
+                }
+            });
+            planeData.forEach(plane => {
+                if (plane.lat && plane.lon) {
+                    const planeIcon = new L.Icon({
+                        iconUrl: 'https://radarplane.com/images/map-icons/aircraft/airliner.png', 
+                        iconSize: [34, 34], 
+                        iconAnchor: [17, 17]
+                    });
+                    if (markers[plane.ICAO]) {
+                        const marker = markers[plane.ICAO];
+                        marker.setLatLng([plane.lat, plane.lon]);
+                        marker.setRotationAngle(plane.track);
+                        if (selectedMarker === marker) {
+                            marker.setIcon(new L.Icon({
+                                iconUrl: 'https://radarplane.com/images/map-icons/aircraft/airliner.png', 
+                                iconSize: [34, 34], 
+                                iconAnchor: [17, 17], 
+                                className: 'highlight'
+                            }));
+                            marker.setZIndexOffset(1000);
+                        }
+                    } else {
+                        const marker = L.marker([plane.lat, plane.lon], { icon: planeIcon }).addTo(map);
+                        marker.on('click', function (e) {
+                            document.getElementById('plane-info-bar').style.display = 'block';
+                            document.getElementById('plane-info-bar').innerHTML = `<b>${plane.CS || 'Unknown'}</b> | Altitude: ${plane.alt} ft | Speed: ${plane.speed} knots | Vertical Speed: ${plane.vertrate} | Track: ${plane.track}`;
+                            if (selectedMarker) {
+                                selectedMarker.setIcon(new L.Icon({
+                                    iconUrl: 'https://radarplane.com/images/map-icons/aircraft/airliner.png', 
+                                    iconSize: [34, 34], 
+                                    iconAnchor: [17, 17]
+                                }));
+                                selectedMarker.setZIndexOffset(0);
+                            }
+                            selectedMarker = marker;
+                            marker.setIcon(new L.Icon({
+                                iconUrl: 'https://radarplane.com/images/map-icons/aircraft/airliner.png', 
+                                iconSize: [34, 34], 
+                                iconAnchor: [17, 17], 
+                                className: 'highlight'
+                            }));
+                            marker.setZIndexOffset(1000);
+                            e.originalEvent.stopPropagation();
+                        });
+                        marker.on('mouseover', function (e) {
+                            marker.getElement().classList.add('highlight');
+                        });
+                        marker.on('mouseout', function (e) {
+                            if (selectedMarker !== marker) {
+                                marker.getElement().classList.remove('highlight');
+                            }
+                        });
+                        marker.setRotationAngle(plane.track);
+                        markers[plane.ICAO] = marker;
+                    }
+                }
+            });
+        }
+    </script>
 </body>
 </html>
