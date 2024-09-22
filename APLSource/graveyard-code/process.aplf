@@ -1,6 +1,7 @@
  process←{
     ⍝ Process the raw data sent to the server
      data←⍵
+     a←⍺
      ⍝⎕←'New Line, Processing',⍴data
 
      ⍝ IF multi line, but this does not happen often, unless there is some netcat repeating or buffering.
@@ -12,6 +13,6 @@
          datap←,↑((4⍴2)⊤⊢)¨{⍵⍳⍨⎕D,⎕A}data ⍝ Convert to bin
          fmt←2⊥5↑datap ⍝ First 5 bits is format of the request
          ~fmt=17:⍬ ⍝ 17 means it is ADS-B and not short Mode-S (Could implement in the future)
-         fmt=17:adsbProcess datap
+         fmt=17:adsbProcess a,(⊂datap)
      }¨data
  }

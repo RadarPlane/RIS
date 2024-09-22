@@ -1,4 +1,7 @@
- adsbProcess datap;data;df;ca;icao;me;tc;pi;generator;calc;dbr;idx
+ db←adsbProcess(db radar datap);data;df;ca;icao;me;tc;pi;generator;calc;dbr;idx
+ :If 1=⍴⍴db
+     db←⊃db
+ :EndIf
  data←⊂df←17 ⍝ DownLink Format
  data,←⊂ca←2⊥3↑5↓datap ⍝ Transponder Capabilities
  data,←⊂icao←(⎕D,⎕A)[(6⍴16)⊤2⊥24↑8↓datap] ⍝ ICAO Transponder Code (Identification of Transponder)
@@ -13,7 +16,7 @@
  :If calc≢pi
      ⍝⎕←'Invalid Message, Throwing Error'
      ⍝⎕SIGNAL 10
-    ⍬
+     ⍬
  :EndIf
  idx←⍸(⊂icao)⍷db[;0] ⍝ Find the row or make the row
  :If 0=⍴idx
@@ -35,6 +38,6 @@
  :Else
      ⍝⎕←'Msg type Does Not Exist: ',tc
  :EndIf
+ dbr[25]←10 ⎕DT⊂⎕TS
+ idx←⍸(⊂icao)⍷db[;0]
  db[idx;]←dbr
-
- ⍝⎕←dbr

@@ -1,0 +1,14 @@
+:Class RadarClient : Radar
+    :Field Public Shared ReadOnly Type←0 ⍝ ¯1:nothing,0:client,1:server. Client means that the Radar connects to RIS. Server means that RIS connects to the Radar.
+
+    ∇ make5 args
+      :Access public
+      :Implements Constructor :Base args
+    ∇
+
+    ∇ make _obj
+      :Access public
+      :Implements Constructor
+      CongaObjName←_obj
+    ∇
+:EndClass

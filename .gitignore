@@ -74,3 +74,12 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
+
+
+#Tatin
+tatin-dependencies/*
+!tatin-dependencies/apl-dependencies.txt
+!tatin-dependencies/apl-buildlist.json
+
+
+.mapkey

@@ -1,0 +1,457 @@
+:Class RIS
+    :field public shared Version←'RIS' '0.1' '11-Jul-2024'
+    :field public shared DbHeader←'ICAO' 'CS' 'CAT' 'clate' 'clato' 'clone' 'clono' 'et' 'ot' 'lat' 'lon' 'alt' 'gclate' 'gclato' 'gclone' 'gclono' 'get' 'got' 'track' 'speed' 'tracktype' 'speedtype' 'ifrcap' 'vertrate' 'diffGNSSBaro' 'LastUpdate'
+
+    :field public ServerPort←0         ⍝ set to non-zero if starting a server
+    :field public Buffer←(0,(⍴DbHeader))⍴⍬        ⍝ initial database buffer
+    :field public BufferLimit←1E5      ⍝ limit to 100,000 rows
+    :field public Clients←⍬            ⍝ vector of client object
+    :field public Servers←⍬            ⍝ vector of client object
+    :field public CongaWaitTime←5000   ⍝ ms to wait in Conga.Wait
+    :field public IPV←'IP'             ⍝ IP version to use
+    :field public DRC
+    :field public JSrv
+    :field public instance Web
+    :field public APIKeys
+    :field public MapKey←''
+
+    :field _serverName
+    :field _stop←1                     ⍝ set to 1 to stop listeners
+    :field _cleanUpThread
+    ⍝:field _antennae←0 2⍴'' ''         ⍝ [;1] Conga object name [;2] (Instance of Client Class)
+    genUUID←{(,~⊃)'  ----  ',8 4⍴(⎕D,⎕C ⎕A)[((12⍴16)⊤12 ⎕DT'Z'),7,4(8+|)@3?19⍴16]}
+
+    ∇ make
+      :Access public
+      :Implements constructor
+      make_common
+    ∇
+
+    ∇ make1 args
+      :Access public
+      :Implements constructor
+    ⍝ args : ServerPort (may decide to add additional parameters in the future)
+      ServerPort←args
+      make_common
+    ∇
+
+    ∇ make_common;iapikey
+      Web←⎕NS _web
+      LoadConga
+      DRC←##.Conga.Init''
+      APIKeys←,⊂iapikey←genUUID 1
+      ⎕←'Initial API Key: ',iapikey
+      :If ⎕NEXISTS ##.CiderConfig.HOME,'/.mapkey'
+          MapKey←¯1↓⊃⎕NGET ##.CiderConfig.HOME,'/.mapkey'
+      :Else
+          ⎕←'Map Key not set, only default map layer supported.'
+      :EndIf
+      {}DRC.SetProp'.' 'EventMode' 1
+      {}DRC.SetProp'.' 'Protocol'IPV
+      ⍝Clients←0 2⍴⊂'' ⍝ [;1] Conga name [;2] (Instance of Client Class)
+    ∇
+
+    ∇ r←New args
+      :Access public shared
+      :If 0∊⍴args
+          r←##.⎕NEW⊃⊃⎕CLASS ⎕THIS
+      :Else
+          r←##.⎕NEW(⊃⊃⎕CLASS ⎕THIS)args
+      :EndIf
+    ∇
+
+    ∇ (rc msg)←Start;rc;server
+      :Access public
+      (rc msg)←0 ''
+      ⎕←#.⎕NL-⍳9
+      _stop←0
+      :If 0≠ServerPort
+          :If 0≠⊃(rc _serverName msg)←3↑DRC.Srv'' ''ServerPort'Text'
+              msg←'Unable to start server on port ',⍕ServerPort
+              →0
+          :EndIf
+          listen&_serverName
+          JSrv←##.Jarvis.New(8080 Web'JSON')
+          JSrv.HTMLInterface←'' 'Index'
+          JSrv.AllowGETs←1
+          JSrv.Debug←1
+          JSrv.Start
+      :EndIf
+      CleanUp&0
+     
+      :For server :In Servers
+          server.Start
+      :EndFor
+    ∇
+
+    ∇ Stop;server
+      :Access public
+      :If _stop=0
+          _stop←1
+          ⎕TKILL _cleanUpThread
+          _←JSrv.Stop
+          :For server :In Servers
+              server.Stop
+          :EndFor
+      :EndIf
+    ∇
+
+    ∇ RL
+      :Access Public
+      Web←⎕NS _web
+    ∇
+
+    ∇ CleanUp _
+      _cleanUpThread←⎕TID
+      :While ~_stop
+          ⍝⎕←'Cleanup: ',(1E¯9×(10 ⎕DT⊂⎕TS)-Buffer[;25])
+          ⍝⎕←'Cleanup: ',(60≤1E¯9×(10 ⎕DT⊂⎕TS)-Buffer[;25])
+          Buffer⌿⍨←~60≤1E¯9×(10 ⎕DT⊂⎕TS)-Buffer[;25]
+          ⎕DL 30
+      :EndWhile
+    ∇
+
+    ∇ listen name;rc;obj;evt;data
+      :While ~_stop
+          (rc obj evt data)←4↑DRC.Wait name CongaWaitTime
+          :Select rc
+          :Case 0
+              :Select evt
+              :Case 'Connect'
+                  addClient obj ⍝(DRC.GetProp obj'PeerAddr') (0 0) (genUUID 0) ('RadarName') (⎕TS) (⎕TS) (0)
+              :Case 'Block'
+                  obj ClientAppendBuffer data
+              :Case 'BlockLast'
+                  removeClient obj
+              :Case 'Closed'
+                  removeClient obj
+              :Case 'Timeout'
+              :Else
+                  ⎕←'Unhandled Conga server event: ',⍕evt
+              :EndSelect
+          :Case 1010 ⍝ object not found
+              ⎕←'Conga server object not found?'
+              _stop←1
+          :Else
+              ⎕←'Unhandled Conga return code: ',⍕rc
+          :EndSelect
+      :EndWhile
+      Close
+    ∇
+
+    ∇ Close
+      :Implements destructor
+      {0:: ⋄ {}DRC.Close _serverName}⍬
+    ∇
+
+    ∇ AddServer addr;ip;port
+      :Access public
+      Servers,←⎕NEW Server addr
+    ∇
+
+    ∇ addClient obj;radar
+      radar←⎕NEW Client obj
+      radar.Connected←1
+      radar.Port←ServerPort
+      addr←DRC.GetProp obj'PeerAddr'
+      a←a↑⍨⊃⌽⍸':'⍷a←↑1⌷↑1⌷addr
+      bytes←↑2⌷↑1⌷addr
+      :If (∨/'.'⍷a)∧(∨/'[::ffff:'⍷a) ⍝ Is embedded IPv4 in IPv6
+          a←⊃{(⍕⍺),'.',(⍕⍵)}/¯4↑bytes
+      :EndIf
+      radar.IP←a
+      radar.UUID←genUUID a ⍝ To be implemented
+      radar.RadarName←'Unknown' ⍝ To be implemented. This is sent by the radar to be identified on a map
+      radar.Position←(0 0) ⍝ To be implemented
+      radar.RadarProtocol←'raw'
+      radar.FirstActive←⎕TS
+      radar.LastActive←⎕TS
+      Clients,←radar
+    ∇
+
+    ∇ removeClient obj
+      Clients/⍨←Clients.ObjectName≢¨⊂obj
+    ∇
+
+    ∇ obj ClientAppendBuffer data;radar;bufs
+      :Access public
+      radar←(Clients⌷⍨(⊂obj)(⍸⍷)(Clients.ObjectName))
+      ⍝buf←(Buffer radar)##.process data
+     
+     ⍝ IF multi line, but this does not happen often, unless there is some netcat repeating or buffering.
+      data←(';',⎕UCS 10)(~⍤∊⍨⊆⊢)data
+      {radar processMsg ⍵}¨data
+    ∇
+
+    ∇ obj ServerAppendBuffer data;radar;bufs
+      :Access public
+      radar←(Servers⌷⍨(⊂obj)(⍸⍷)(Servers.ObjectName))
+      ⍝buf←(Buffer radar)##.process data
+     
+     ⍝ IF multi line, but this does not happen often, unless there is some netcat repeating or buffering.
+      data←(';',⎕UCS 10)(~⍤∊⍨⊆⊢)data
+      {radar processMsg ⍵}¨data
+    ∇
+
+    ∇ radar processMsg msg;data;datap;fmt
+      ⍝:Trap 0
+      data←1↓msg
+             ⍝0::⍬⍝⎕←'Error Processing: Continuing without'
+      datap←,↑((4⍴2)⊤⊢)¨{⍵⍳⍨⎕D,⎕A}data ⍝ Convert to bin
+      fmt←2⊥5↑datap ⍝ First 5 bits is format of the request
+             ⍝~fmt=17:⍬ ⍝ 17 means it is ADS-B and not short Mode-S (Could implement in the future)
+      :If fmt=17
+          Buffer←##.adsbProcess Buffer radar datap
+          radar.MessageProcessed
+      :EndIf
+      ⍝:Else
+            ⍝ Error Processing, continuing without...
+       ⍝   ⎕←'error processing'
+      ⍝:EndTrap
+    ∇
+
+    ∇ LoadConga
+      :If 0=##.⎕NC'Conga'
+          'Conga'##.⎕CY'conga'
+      :EndIf
+    ∇
+
+    :Class Server : Radar ⍝ We are a client, the radar is a server.
+        :field _stop←0
+        genUUID←{(,~⊃)'  ----  ',8 4⍴(⎕D,⎕C ⎕A)[((12⍴16)⊤12 ⎕DT'Z'),7,4(8+|)@3?19⍴16]}
+        ∇ make
+          :Access public
+          :Implements constructor
+          DRC←##.DRC
+        ∇
+
+        ∇ make1 args;addr
+          :Access public
+          :Implements constructor
+          DRC←##.DRC
+          UUID←genUUID 0
+          RadarName←'RadarNameUnknown'
+          Position←(0 0)
+          LastActive←⎕TS
+          FirstActive←⎕TS
+          RadarProtocol←'raw'
+          addr←args
+          (IP Port)←parseAddr addr
+        ∇
+
+        ∇ (ip port)←parseAddr addr
+          (ip port)←':'(≠⊆⊢)addr ⍝ TODO: IPv6
+          port←⊃(//)⎕VFI port
+        ∇
+
+        ∇ (rc msg)←Start;rc
+          :Access public
+          (rc msg)←0 ''
+          :If 0≠⊃(rc ObjectName msg)←3↑DRC.Clt''IP Port'Text' ⍝ This can hang - Unable to kill without kill -9. Not sure how to have a time out error.
+              msg←'Unable to start client to ',(IP,':',⍕Port)
+              →0
+          :EndIf
+          listen&ObjectName
+          Closed←0
+        ∇
+
+        ∇ Stop
+          :Access public
+          Close
+        ∇
+
+        ∇ listen name;rc;obj;evt;data
+          :While ~_stop
+              (rc obj evt data)←4↑DRC.Wait name ##.CongaWaitTime
+              :Select rc
+              :Case 0
+                  :Select evt
+                  :Case 'Block'
+                      obj ##.ServerAppendBuffer data
+                  :CaseList 'BlockLast' 'Closed'
+                      _stop←1
+                  :Case 'Timeout'
+                  :Else
+                      ⎕←'Unhandled Conga client event: ',⍕evt
+                  :EndSelect
+              :Case 1010 ⍝ object not found
+                  ⎕←'Conga client object not found?'
+                  _stop←1
+              :Else
+                  ⎕←'Unhandled Conga return code: ',⍕rc
+              :EndSelect
+          :EndWhile
+          Close
+        ∇
+
+        ∇ Close
+          :Implements destructor
+          Closed←1
+          {0:: ⋄ {}DRC.Close ObjectName}⍬
+        ∇
+    :EndClass
+    :Class Client : Radar ⍝ We are a server, the radar is a client.
+        ∇ make
+          :Access public
+          :Implements constructor
+          DRC←##.DRC
+        ∇
+
+        ∇ make1 _obj
+          :Access public
+          :Implements constructor
+          DRC←##.DRC
+          ObjectName←_obj
+        ∇
+
+        ∇ make5(_obj _addr _port _uuid _pos)
+          :Access public
+          :Implements constructor
+          DRC←##.DRC
+          (ObjectName Address Port UUID Position)←(_obj _addr _port _uuid _pos)
+        ∇
+    :EndClass
+    :Class Radar
+        :field public IP
+        :field public Port
+        :field public ObjectName←''
+        :field public Closed←¯1
+        :Field Public UUID ⍝ UUID of radar. To be implemented later...
+        :Field Public RadarName ⍝ Radar will send it's name. To be implemented later...
+        :Field Public Position ⍝ Vector, (lat lon), reference position of the radar. NOT Fuzzed, not safe to display publicly
+        :Field Public LastActive ⍝ Last known message timestamp
+        :Field Public FirstActive ⍝ First known activity timestamp
+        :Field Public RadarProtocol ⍝ Protocol of the radar
+        :Field Public TotalMessages←0
+
+        :field public DRC
+
+        ∇ MessageProcessed ⍝ Run this whenever a message has been finished being processed
+          :Access Public
+          LastActive←⎕TS
+          TotalMessages+←1
+        ∇
+
+        ∇ obj←GenerateExportObject
+          :Access Public
+          obj←⎕NS ⍬
+          obj.IP←IP
+          obj.Port←Port
+          obj.ObjectName←ObjectName
+          obj.Closed←Closed
+          obj.UUID←UUID
+          obj.RadarName←RadarName
+          obj.Position←Position
+          obj.LastActive←LastActive
+          obj.FirstActive←FirstActive
+          obj.RadarProtocol←RadarProtocol
+          obj.TotalMessages←TotalMessages
+        ∇
+    :EndClass
+
+    ∇ r←Authenticated req;key
+      :Access Public Instance
+      ⍝ Takes the Jarvis request, and checks if user is properly authenticated
+      key←req.GetHeader'Authorization'
+      r←(⊂key)∊APIKeys
+    ∇
+    :Namespace _web
+        :Namespace api
+            ∇ r←req index _
+              r←⎕NS ⍬
+              ris←##.##
+              :If ~ris.Authenticated req
+                  'Not Authenticated'req.Fail 403
+                  r.success←'false'
+                  r.errorMessage←'Not Authenticated'
+              :Else
+                  r.version←ris.Version
+                  r.latestAPIVersion←1
+              :EndIf
+            ∇
+            ∇ r←req ListClients _;clts
+              r←⎕NS ⍬
+              ris←##.##
+              :If ~ris.Authenticated req
+                  'Not Authenticated'req.Fail 403
+                  r.success←'false'
+                  r.errorMessage←'Not Authenticated'
+              :Else
+                  clts←ris.Clients
+                  :If ⍬≡clts
+                      r.success←'true'
+                      r.data←⍬
+                  :Else
+                      :Trap 0
+                          r.data←clts.GenerateExportObject
+                          r.success←'true'
+                      :Else
+                          'Error Trapped'req.Fail 500
+                          r.success←'false'
+                          r.data←⍬
+                      :EndTrap
+                  :EndIf
+              :EndIf
+            ∇
+            ∇ r←req ListServers _;srvs
+              r←⎕NS ⍬
+              ris←##.##
+              :If ~ris.Authenticated req
+                  'Not Authenticated'req.Fail 403
+                  r.success←'false'
+                  r.errorMessage←'Not Authenticated'
+              :Else
+                  srvs←ris.Servers
+                  :If ⍬≡srvs
+                      r.success←'true'
+                      r.data←⍬
+                  :Else
+                      :Trap 0
+                          r.data←srvs.GenerateExportObject
+                      :Else
+                          req.Fail 500
+                          r.success←'false'
+                          r.data←⍬
+                      :EndTrap
+                  :EndIf
+              :EndIf
+            ∇
+            ∇ r←req ListPlanes _
+              r←⎕NS ⍬
+              ris←##.##
+              :If ~ris.Authenticated req
+                  'Not Authenticated'req.Fail 403
+                  r.success←'false'
+                  r.errorMessage←'Not Authenticated'
+              :Else
+                  :Trap 0
+                      r.success←'true'
+                      r.data←1↓0∘(⌷{(⎕NS ⍬)(⊣⊣⍎)⍕⍺'←⍵'}⍤1↓)({⍵⌿⍨~∨/{⍬≡⍵}¨⍵}(ris.DbHeader⍪ris.Buffer)[;0 1 2 9 10 11 18 19 20 21 22 23 24 25])
+                  :Else
+                      req.Fail 500
+                      r.success←'false'
+                      r.data←⍬
+                  :EndTrap
+              :EndIf
+            ∇
+        :EndNameSpace
+        ∇ r←req AdminUI _;file
+          req.Response.Headers←1 2⍴'Content-Type' 'text/html; charset=utf-8'
+          file←⎕NGET ##.##.CiderConfig.HOME,'/UI/admin.html'
+          r←⊃file
+        ∇
+        ∇ r←Index req
+          req.SetStatus 302
+          'Location' req.SetHeader '/PlanesUI'
+          r←⍬
+        ∇
+        ∇ r←req PlanesUI _;file;text
+          req.Response.Headers←1 2⍴'Content-Type' 'text/html; charset=utf-8'
+          text←⊃⎕NGET ##.##.CiderConfig.HOME,'/UI/planes.html'
+          :If ''≢##.MapKey
+              text←('REPLACEME'⎕R ##.MapKey)text
+          :EndIf
+          r←text
+        ∇
+    :Endnamespace
+:EndClass

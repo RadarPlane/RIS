@@ -1,6 +1,4 @@
- airPos←{
-     data←⍵
-     dbr←⍺
+ r←dbr airPos data;me;tc;ss;saf;alt;t;evenorodd;latc;lonc;latOld;lonOld;tOld;p;q;lat;lon;safe;d
 
      me←∊data[3]
      tc←∊data[4] ⍝ Depending on tc, the altitude is either baro or gnss, and encoding is different, as GNSS is measured in meters, and baro is in ft.
@@ -16,7 +14,7 @@
      alt←12↑me
      me←12↓me
 
-     t←¯1 1 ⎕DT⊂⎕TS
+     t←10⎕DT⊂⎕TS
      me←1↓me ⍝ The time bit seems to be useless? Something to do with UTC
 
      evenorodd←⊃me
@@ -30,15 +28,44 @@
 
      dbr[3+evenorodd]←latc
      dbr[5+evenorodd]←lonc
+     tOld←dbr[7+evenorodd]
      dbr[7+evenorodd]←t
+     lat lon←{(~0∊⍴∊⍵[3])∧(~0∊⍴∊⍵[4]):##.calcAirPos ⍵[3 4 5 6 7 8] ⋄ ⍬ ⍬}dbr ⍝ If the plane has just crossed a boundary, it won't be accurate...
 
-     lat lon←{(~0∊⍴∊⍵[3])∧(~0∊⍴∊⍵[4]):##.calcAirPos ⍵[3 4 5 6 7 8] ⋄ ⍬ ⍬}dbr
+     :If (⍬≡lat)∨(⍬≡lon) ⍝ Did we even calculate a lat and lon?
 
-     dbr[9]←⊂lat
-     dbr[10]←⊂lon
+          dbr[9]←⊂lat
+          dbr[10]←⊂lon
 
-     alt←tc{⍺≤18:##.altBaro ⍵ ⋄ 2⊥⍵}alt
-     dbr[11]←alt
+          alt←tc{⍺≤18:##.altBaro ⍵ ⋄ 2⊥⍵}alt
+          dbr[11]←alt
 
-     dbr data
- }
+          r←dbr data
+     :Else
+         :If (~(⊂⍬)≡tOld)∧(0≢(t-tOld)) ⍝ Check if there was a position before this
+               ⍝ Check if plane is moving too fast (perhaps corrupted position)
+               latOld←dbr[9]
+               lonOld←dbr[10]
+               r←6371
+               (p q)←○(lat lon) (latOld lonOld)÷180
+               d←2×r×¯1○(+/(2*⍨1○(p-q)÷2)×1(×/2○⊃¨p q))*÷2
+               safe←4000>(d÷((60×60×1000×1000×1000)÷⍨(t-tOld)))
+               :If 0≡safe
+                 dbr[9]←⊂⍬
+                 dbr[10]←⊂⍬
+                 r←dbr data
+               :Else
+                  dbr[9]←⊂lat
+                  dbr[10]←⊂lon
+                  alt←tc{⍺≤18:##.altBaro ⍵ ⋄ 2⊥⍵}alt
+                  dbr[11]←alt
+                  r←dbr data
+               :EndIf
+        :Else
+            dbr[9]←⊂lat
+            dbr[10]←⊂lon
+            alt←tc{⍺≤18:##.altBaro ⍵ ⋄ 2⊥⍵}alt
+            dbr[11]←alt
+            r←dbr data
+        :EndIf
+     :EndIF

@@ -15,17 +15,44 @@ RadarIngestSystem is a project written in Dyalog APL designed for ingesting and 
 
 ## Running RIS
 
-To start the RadarIngestSystem, run the following:
+To start the RadarIngestSystem, you must first create an instance of the RIS class:
 ```apl
-RadarIngestSystem.main 30001
+    ris←RadarIngestSystem.RIS.New 30001 ⍝ 30001 is the default port that this server should run on
+Initial API Key: 01912f41-b152-76f6-ad50-72ea7f45e1bc
 ```
-This starts a new server thread and initializes it on port `30001`.
+
+Radar Servers can be added:
+```apl
+    ris.AddServer '192.168.2.14:30002'
+```
+
+Finally, the server can be started:
+
+```apl
+    ris.Start
+Start[3] 2024-08-07 @ 20.42.10.635 - Starting  Jarvis  1.16.3 
+LoadConga[32] 2024-08-07 @ 20.42.10.644 - Conga copied from /Applications/Dyalog-19.0.app/Contents/Resources/Dyalog/ws/conga
+LoadConga[44] 2024-08-07 @ 20.42.10.645 - Local Conga v5.3 reference is #._tatin.dyalog_Jarvis_1_16_3.Jarvis.[LIB]
+Start[83] 2024-08-07 @ 20.42.10.646 - Jarvis starting in "JSON" mode on port 8080
+Start[84] 2024-08-07 @ 20.42.10.646 - Serving code in #.RadarIngestSystem.[RIS].[Namespace]
+Start[85] 2024-08-07 @ 20.42.10.647 - Click http://192.168.236.18:8080 to access web interface
+```
+
+This starts all of the functionalities (Web UI, Server Connections, and Client Listener) of RIS. To access the Web UI, click on the link in the logs, and then enter the Initial API Key in the API Key field of the UI. 
+
+For additional map layer functionality (such as satellite mapping), add a map key from [mapbox.com](http://mapbox.com/) to the RIS instance:
+
+```
+ris.MapKey←'MAPKEY'
+```
+
+![Screenshot of Application](image.png)
 
 ## Stopping RIS
 
-To stop all threads of the RadarIngestSystem, run the following:
+To stop the RIS instance, run the following:
 ```apl
-RadarIngestSystem.end
+ris.Stop
 ```
 
 ## Database Schema
@@ -59,13 +86,9 @@ The database of planes is stored in a matrix format, where each row represents a
 | 22    | ifrcap                               | IFR Capability |
 | 23    | vertrate                             | Vertical rate |
 | 24    | diffGNSSBaro                         | Difference between GNSS and Barometric altitude |
+| 24    | LastUpdate                           | Last time a message was received |
 
 Note that the even and odd information contained within the database is for computational purposes, as one needs both an even and odd frame to calculate the latitude and longitude. 
-
-To check the database, you can use:
-```apl
-RadarIngestSystem.db
-```
 
 In the future, a proper GUI could be implemented, however the main purpose of this will be to create a REST API to use as the backend of RadarPlane.com. 
 
